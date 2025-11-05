@@ -1,0 +1,752 @@
+<!doctype html>
+<html lang="zh-TW">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>專業個人部落格</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .blog-card {
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .blog-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+      transition: left 0.6s;
+    }
+    
+    .blog-card:hover::before {
+      left: 100%;
+    }
+    
+    .blog-card:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+    
+    .tag {
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .tag:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    
+    .nav-link {
+      position: relative;
+      transition: all 0.3s ease;
+    }
+    
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: currentColor;
+      transition: width 0.3s ease;
+    }
+    
+    .nav-link:hover::after {
+      width: 100%;
+    }
+    
+    .scroll-to-top {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      opacity: 0;
+      visibility: hidden;
+      z-index: 1000;
+    }
+    
+    .scroll-to-top.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .scroll-to-top:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.8s ease-out;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .typing-animation {
+      overflow: hidden;
+      border-right: 2px solid;
+      white-space: nowrap;
+      animation: typing 3s steps(40, end), blink-caret 0.75s step-end infinite;
+    }
+    
+    @keyframes typing {
+      from { width: 0 }
+      to { width: 100% }
+    }
+    
+    @keyframes blink-caret {
+      from, to { border-color: transparent }
+      50% { border-color: currentColor }
+    }
+    
+    .parallax-bg {
+      background-attachment: fixed;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: cover;
+    }
+    
+    .glass-effect {
+      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .social-icon {
+      transition: all 0.3s ease;
+    }
+    
+    .social-icon:hover {
+      transform: scale(1.2) rotate(5deg);
+    }
+    
+    .reading-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 0%;
+      height: 3px;
+      background: linear-gradient(90deg, #3498db, #9b59b6);
+      z-index: 1000;
+      transition: width 0.1s ease;
+    }
+    
+    .mobile-menu {
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+    }
+    
+    .mobile-menu.open {
+      transform: translateX(0);
+    }
+    
+    @media (max-width: 768px) {
+      .typing-animation {
+        animation: none;
+        border-right: none;
+        white-space: normal;
+      }
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="min-h-full"><!-- Reading Progress Bar -->
+  <div class="reading-progress" id="reading-progress"></div>
+  <div class="min-h-full flex flex-col"><!-- Navigation -->
+   <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 py-4 px-6">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+     <div class="font-bold text-xl"><span id="nav-logo">我的部落格</span>
+     </div><!-- Desktop Navigation -->
+     <div class="hidden md:flex space-x-8"><a href="#home" id="nav-home-link" class="nav-link font-medium">首頁</a> <a href="#about" id="nav-about-link" class="nav-link font-medium">關於</a> <a href="#contact" id="nav-contact-link" class="nav-link font-medium">聯絡</a>
+     </div><!-- Mobile Menu Button --> <button class="md:hidden" id="mobile-menu-btn">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+      </svg></button>
+    </div><!-- Mobile Menu -->
+    <div class="mobile-menu fixed top-0 right-0 h-full w-64 shadow-lg md:hidden" id="mobile-menu">
+     <div class="p-6"><button class="mb-8" id="close-menu-btn">
+       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+       </svg></button>
+      <div class="space-y-4"><a href="#home" class="block py-2 font-medium">首頁</a> <a href="#about" class="block py-2 font-medium">關於</a> <a href="#contact" class="block py-2 font-medium">聯絡</a>
+      </div>
+     </div>
+    </div>
+   </nav><!-- Header -->
+   <header id="header" class="py-32 px-6 relative overflow-hidden" style="margin-top: 80px;">
+    <div class="absolute inset-0 opacity-10">
+     <div class="absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500"></div>
+    </div>
+    <div class="max-w-4xl mx-auto text-center relative z-10 fade-in">
+     <h1 id="blog-title" class="mb-6 font-bold typing-animation">我的專業部落格</h1>
+     <p id="blog-subtitle" class="text-xl mb-8 opacity-90">分享技術見解、創意靈感與人生體悟</p>
+     <div class="flex justify-center space-x-4"><button onclick="scrollToSection('about')" class="px-8 py-3 rounded-full font-medium transition-all hover:scale-105 hover:shadow-lg"> 探索更多 </button> <button onclick="scrollToSection('contact')" class="px-8 py-3 rounded-full font-medium border-2 transition-all hover:scale-105"> 聯絡我 </button>
+     </div>
+    </div>
+   </header><!-- Main Content -->
+   <main class="flex-1 px-6 py-16">
+    <div class="max-w-6xl mx-auto"><!-- About Section -->
+     <section id="about" class="mb-20 fade-in">
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+       <div>
+        <h2 id="about-title" class="mb-6 font-bold">關於我,我叫謝承叡</h2>
+        <p id="about-text" class="leading-relaxed mb-6">歡迎來到我的數位世界！我是一位熱愛技術與創意的開發者，致力於透過程式碼創造有意義的數位體驗。在這裡，我分享我的學習歷程、技術見解，以及對未來科技的思考。</p>
+        <div class="flex flex-wrap gap-3"><span class="px-4 py-2 rounded-full text-sm font-medium">前端開發</span> <span class="px-4 py-2 rounded-full text-sm font-medium">UI/UX設計</span> <span class="px-4 py-2 rounded-full text-sm font-medium">創意思維</span>
+        </div>
+       </div>
+       <div class="relative">
+        <div class="w-full h-80 rounded-2xl shadow-2xl overflow-hidden">
+         <div class="w-full h-full bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 flex items-center justify-center">
+          <div class="text-center text-white">
+           <div class="text-6xl mb-4">
+            👨‍💻
+           </div>
+           <p class="text-xl font-medium">創意開發者</p>
+          </div>
+         </div>
+        </div>
+       </div>
+      </div>
+     </section><!-- Featured Work -->
+     <section class="mb-20 fade-in">
+      <h2 class="mb-12 font-bold text-center">精選作品</h2>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8"><!-- Featured Website -->
+       <div class="blog-card p-6 rounded-2xl shadow-lg col-span-full lg:col-span-2">
+        <div class="flex flex-wrap gap-2 mb-4"><span class="tag px-3 py-1 rounded-full text-sm font-medium">精選作品</span> <span class="tag px-3 py-1 rounded-full text-sm font-medium">網站開發</span> <span class="tag px-3 py-1 rounded-full text-sm font-medium bg-gradient-to-r from-purple-500 to-pink-500 text-white">最新</span>
+        </div>
+        <h3 class="mb-3 font-bold text-xl">我的最新網站專案 ✨</h3>
+        <p class="mb-6 leading-relaxed">這是我最新完成的網站作品，展現了現代化的設計理念和優秀的使用者體驗。採用了最新的前端技術，確保在各種裝置上都能完美呈現。</p>
+        <div class="mb-6 p-4 glass-effect rounded-xl">
+         <p class="text-sm font-medium mb-2">🌐 專案連結：</p><a href="https://leafy-douhua-0e0117.netlify.app/" target="_blank" rel="noopener noreferrer" class="hover:underline break-all text-sm"> https://leafy-douhua-0e0117.netlify.app/ </a>
+        </div>
+        <div class="flex items-center justify-between">
+         <div class="flex items-center space-x-4"><span class="text-sm">2025年11月04日</span>
+          <div class="flex space-x-2"><span class="text-xs px-2 py-1 rounded">React</span> <span class="text-xs px-2 py-1 rounded">Tailwind</span>
+          </div>
+       </div><!-- Stats Card -->
+       <div class="blog-card p-6 rounded-2xl shadow-lg text-center">
+        <div class="text-3xl mb-4">
+         📊
+        </div>
+        <h3 class="font-bold mb-2">專案統計</h3>
+        <div class="space-y-3">
+         <div>
+          <div class="text-2xl font-bold">
+           15+
+          </div>
+          <div class="text-sm">
+           完成專案
+          </div>
+         </div>
+         <div>
+          <div class="text-2xl font-bold">
+           3年
+          </div>
+          <div class="text-sm">
+           開發經驗
+          </div>
+         </div>
+         <div>
+          <div class="text-2xl font-bold">
+           100%
+          </div>
+          <div class="text-sm">
+           客戶滿意度
+          </div>
+         </div>
+        </div>
+       </div>
+      </div>
+     </section><!-- Blog Posts -->
+     <section class="mb-20 fade-in">
+      <h2 class="mb-12 font-bold text-center">最新文章</h2>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8"><!-- Blog Post 1 -->
+       <article class="blog-card p-6 rounded-2xl shadow-lg">
+        <div class="flex flex-wrap gap-2 mb-4"><span class="tag px-3 py-1 rounded-full text-sm font-medium">技術</span> <span class="tag px-3 py-1 rounded-full text-sm font-medium">前端</span>
+        </div>
+        <h3 class="mb-3 font-bold">現代前端開發最佳實踐</h3>
+        <p class="mb-4 leading-relaxed text-sm">探討2025年前端開發的最新趨勢，包括性能優化、可訪問性設計，以及如何構建可維護的大型應用程式。</p>
+        <div class="flex items-center justify-between text-sm"><span>2025年11月4日</span> <a href="#" class="font-medium hover:underline">閱讀更多 →</a>
+        </div>
+       </article><!-- Blog Post 2 -->
+       <article class="blog-card p-6 rounded-2xl shadow-lg">
+        <div class="flex flex-wrap gap-2 mb-4"><span class="tag px-3 py-1 rounded-full text-sm font-medium">設計</span> <span class="tag px-3 py-1 rounded-full text-sm font-medium">UX</span>
+        </div>
+        <h3 class="mb-3 font-bold">使用者體驗設計心法</h3>
+        <p class="mb-4 leading-relaxed text-sm">從使用者研究到原型設計，分享如何創造直觀且令人愉悅的數位產品體驗。</p>
+        <div class="flex items-center justify-between text-sm"><span>2025年11月4日</span> <a href="#" class="font-medium hover:underline">閱讀更多 →</a>
+        </div>
+       </article><!-- Blog Post 3 -->
+       <article class="blog-card p-6 rounded-2xl shadow-lg">
+        <div class="flex flex-wrap gap-2 mb-4"><span class="tag px-3 py-1 rounded-full text-sm font-medium">生產力</span>
+        </div>
+        <h3 class="mb-3 font-bold">開發者的時間管理術</h3>
+        <p class="mb-4 leading-relaxed text-sm">如何在快節奏的開發環境中保持高效率，平衡工作與學習的實用技巧分享。</p>
+        <div class="flex items-center justify-between text-sm"><span>2025年11月4日</span> <a href="#" class="font-medium hover:underline">閱讀更多 →</a>
+        </div>
+       </article><!-- Blog Post 4 -->
+       <article class="blog-card p-6 rounded-2xl shadow-lg">
+        <div class="flex flex-wrap gap-2 mb-4"><span class="tag px-3 py-1 rounded-full text-sm font-medium">創業</span> <span class="tag px-3 py-1 rounded-full text-sm font-medium">心得</span>
+        </div>
+        <h3 class="mb-3 font-bold">從想法到產品的創業之路</h3>
+        <p class="mb-4 leading-relaxed text-sm">分享我在創業路上的經驗與教訓，如何將創意轉化為實際的商業價值。</p>
+        <div class="flex items-center justify-between text-sm"><span>2025年11月4日</span> <a href="#" class="font-medium hover:underline">閱讀更多 →</a>
+        </div>
+       </article><!-- Blog Post 5 -->
+       <article class="blog-card p-6 rounded-2xl shadow-lg">
+        <div class="flex flex-wrap gap-2 mb-4"><span class="tag px-3 py-1 rounded-full text-sm font-medium">工具</span> <span class="tag px-3 py-1 rounded-full text-sm font-medium">推薦</span>
+        </div>
+        <h3 class="mb-3 font-bold">2025年必備開發工具清單</h3>
+        <p class="mb-4 leading-relaxed text-sm">精選今年最實用的開發工具和資源，幫助你提升開發效率和程式碼品質。</p>
+        <div class="flex items-center justify-between text-sm"><span>2025年11月4日</span> <a href="#" class="font-medium hover:underline">閱讀更多 →</a>
+        </div>
+       </article><!-- Blog Post 6 -->
+       <article class="blog-card p-6 rounded-2xl shadow-lg">
+        <div class="flex flex-wrap gap-2 mb-4"><span class="tag px-3 py-1 rounded-full text-sm font-medium">思考</span> <span class="tag px-3 py-1 rounded-full text-sm font-medium">未來</span>
+        </div>
+        <h3 class="mb-3 font-bold">AI時代的開發者角色</h3>
+        <p class="mb-4 leading-relaxed text-sm">探討人工智慧對軟體開發的影響，以及開發者如何在AI時代中找到自己的定位。</p>
+        <div class="flex items-center justify-between text-sm"><span>2025年11月4日</span> <a href="#" class="font-medium hover:underline">閱讀更多 →</a>
+        </div>
+       </article>
+      </div>
+     </section><!-- Contact Section -->
+     <section id="contact" class="fade-in">
+      <div class="text-center mb-12">
+       <h2 class="mb-4 font-bold">讓我們聊聊</h2>
+       <p class="text-lg">有任何想法？歡迎與我聯繫！</p>
+      </div>
+      <div class="grid md:grid-cols-2 gap-12 max-w-4xl mx-auto">
+       <div class="space-y-6">
+        <div class="flex items-center space-x-4">
+         <div class="w-12 h-12 rounded-full flex items-center justify-center"><span class="text-xl">📧</span>
+         </div>
+         <div>
+          <h3 class="font-medium">電子郵件</h3>
+          <p id="contact-email-display" class="text-sm">cxie44814@gmail.com</p>
+         </div>
+        </div>
+        <div class="flex items-center space-x-4">
+         <div class="w-12 h-12 rounded-full flex items-center justify-center"><span class="text-xl">💬</span>
+         </div>
+         <div>
+          <h3 class="font-medium">社群媒體</h3>
+          <p id="contact-social-display" class="text-sm">CHARLES@myblog</p>
+         </div>
+        </div>
+        <div class="flex space-x-4 pt-4"><a href="#" class="social-icon w-10 h-10 rounded-full flex items-center justify-center"> <span>📘</span> </a> <a href="#" class="social-icon w-10 h-10 rounded-full flex items-center justify-center"> <span>🐦</span> </a> <a href="#" class="social-icon w-10 h-10 rounded-full flex items-center justify-center"> <span>💼</span> </a> <a href="#" class="social-icon w-10 h-10 rounded-full flex items-center justify-center"> <span>📷</span> </a>
+        </div>
+       </div>
+       <div class="p-8 rounded-2xl shadow-lg">
+        <form id="contact-form" class="space-y-4">
+         <div><label for="name" class="block text-sm font-medium mb-2">姓名</label> <input type="text" id="name" name="name" required class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+         </div>
+         <div><label for="email" class="block text-sm font-medium mb-2">電子郵件</label> <input type="email" id="email" name="email" required class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+         </div>
+         <div><label for="message" class="block text-sm font-medium mb-2">訊息</label> <textarea id="message" name="message" rows="4" required class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"></textarea>
+         </div><button type="submit" class="w-full py-3 rounded-lg font-medium transition-all hover:scale-105 hover:shadow-lg"> 發送訊息 </button>
+        </form>
+       </div>
+      </div>
+     </section>
+    </div>
+   </main><!-- Footer -->
+   <footer id="footer" class="py-12 px-6 text-center">
+    <div class="max-w-4xl mx-auto">
+     <div class="mb-6">
+      <h3 class="font-bold text-lg mb-2">我的專業部落格</h3>
+      <p class="text-sm">持續學習，持續創造</p>
+     </div>
+     <div class="border-t pt-6">
+      <p id="footer-text" class="text-sm">© 2024 我的專業部落格 - 用心分享每一刻技術與創意</p>
+     </div>
+    </div>
+   </footer>
+  </div><!-- Scroll to Top Button -->
+  <div class="scroll-to-top" id="scroll-to-top">
+   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+   </svg>
+  </div>
+  <script>
+    const defaultConfig = {
+      background_color: "#f8fafc",
+      surface_color: "#ffffff",
+      text_color: "#1e293b",
+      primary_action_color: "#3b82f6",
+      secondary_action_color: "#64748b",
+      font_family: "system-ui",
+      font_size: 16,
+      blog_title: "我的專業部落格",
+      blog_subtitle: "分享技術見解、創意靈感與人生體悟",
+      nav_home: "首頁",
+      nav_about: "關於",
+      nav_contact: "聯絡",
+      about_title: "關於我",
+      about_text: "歡迎來到我的數位世界！我是一位熱愛技術與創意的開發者，致力於透過程式碼創造有意義的數位體驗。在這裡，我分享我的學習歷程、技術見解，以及對未來科技的思考。",
+      contact_email: "hello@myblog.com",
+      contact_social: "@myblog",
+      footer_text: "© 2024 我的專業部落格 - 用心分享每一刻技術與創意"
+    };
+
+    // Smooth scrolling
+    function scrollToSection(sectionId) {
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    // Reading progress bar
+    function updateReadingProgress() {
+      const scrollTop = window.pageYOffset;
+      const docHeight = document.body.scrollHeight - window.innerHeight;
+      const scrollPercent = (scrollTop / docHeight) * 100;
+      document.getElementById('reading-progress').style.width = scrollPercent + '%';
+    }
+
+    // Scroll to top functionality
+    function updateScrollToTop() {
+      const scrollToTop = document.getElementById('scroll-to-top');
+      if (window.pageYOffset > 300) {
+        scrollToTop.classList.add('visible');
+      } else {
+        scrollToTop.classList.remove('visible');
+      }
+    }
+
+    // Navbar background on scroll
+    function updateNavbar() {
+      const navbar = document.getElementById('navbar');
+      if (window.pageYOffset > 50) {
+        navbar.classList.add('glass-effect');
+      } else {
+        navbar.classList.remove('glass-effect');
+      }
+    }
+
+    // Mobile menu functionality
+    function initMobileMenu() {
+      const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+      const mobileMenu = document.getElementById('mobile-menu');
+      const closeMenuBtn = document.getElementById('close-menu-btn');
+
+      mobileMenuBtn.addEventListener('click', () => {
+        mobileMenu.classList.add('open');
+      });
+
+      closeMenuBtn.addEventListener('click', () => {
+        mobileMenu.classList.remove('open');
+      });
+
+      // Close menu when clicking on links
+      mobileMenu.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+          mobileMenu.classList.remove('open');
+        });
+      });
+    }
+
+    // Contact form handling
+    function initContactForm() {
+      const form = document.getElementById('contact-form');
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        // Show success message
+        const button = form.querySelector('button[type="submit"]');
+        const originalText = button.textContent;
+        button.textContent = '發送中...';
+        button.disabled = true;
+        
+        setTimeout(() => {
+          button.textContent = '發送成功！';
+          setTimeout(() => {
+            button.textContent = originalText;
+            button.disabled = false;
+            form.reset();
+          }, 2000);
+        }, 1000);
+      });
+    }
+
+    // Intersection Observer for fade-in animations
+    function initAnimations() {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('fade-in');
+          }
+        });
+      }, { threshold: 0.1 });
+
+      document.querySelectorAll('.fade-in').forEach(el => {
+        observer.observe(el);
+      });
+    }
+
+    async function onConfigChange(config) {
+      const baseFontStack = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      const customFont = config.font_family || defaultConfig.font_family;
+      const fontFamily = `${customFont}, ${baseFontStack}`;
+      const baseSize = config.font_size || defaultConfig.font_size;
+      
+      const backgroundColor = config.background_color || defaultConfig.background_color;
+      const surfaceColor = config.surface_color || defaultConfig.surface_color;
+      const textColor = config.text_color || defaultConfig.text_color;
+      const primaryColor = config.primary_action_color || defaultConfig.primary_action_color;
+      const secondaryColor = config.secondary_action_color || defaultConfig.secondary_action_color;
+
+      // Apply global styles
+      document.body.style.backgroundColor = backgroundColor;
+      document.body.style.color = textColor;
+      document.body.style.fontFamily = fontFamily;
+      document.body.style.fontSize = `${baseSize}px`;
+
+      // Update navbar
+      const navbar = document.getElementById('navbar');
+      navbar.style.backgroundColor = surfaceColor;
+      navbar.style.color = textColor;
+
+      const navLogo = document.getElementById('nav-logo');
+      navLogo.textContent = config.blog_title || defaultConfig.blog_title;
+
+      const navHomeLink = document.getElementById('nav-home-link');
+      navHomeLink.textContent = config.nav_home || defaultConfig.nav_home;
+
+      const navAboutLink = document.getElementById('nav-about-link');
+      navAboutLink.textContent = config.nav_about || defaultConfig.nav_about;
+
+      const navContactLink = document.getElementById('nav-contact-link');
+      navContactLink.textContent = config.nav_contact || defaultConfig.nav_contact;
+
+      // Update header
+      const header = document.getElementById('header');
+      header.style.backgroundColor = surfaceColor;
+
+      const blogTitle = document.getElementById('blog-title');
+      blogTitle.textContent = config.blog_title || defaultConfig.blog_title;
+      blogTitle.style.fontSize = `${baseSize * 3}px`;
+      blogTitle.style.color = textColor;
+
+      const blogSubtitle = document.getElementById('blog-subtitle');
+      blogSubtitle.textContent = config.blog_subtitle || defaultConfig.blog_subtitle;
+      blogSubtitle.style.fontSize = `${baseSize * 1.25}px`;
+      blogSubtitle.style.color = secondaryColor;
+
+      // Update about section
+      const aboutTitle = document.getElementById('about-title');
+      aboutTitle.textContent = config.about_title || defaultConfig.about_title;
+      aboutTitle.style.fontSize = `${baseSize * 2}px`;
+      aboutTitle.style.color = textColor;
+
+      const aboutText = document.getElementById('about-text');
+      aboutText.textContent = config.about_text || defaultConfig.about_text;
+      aboutText.style.fontSize = `${baseSize}px`;
+      aboutText.style.color = textColor;
+
+      // Update contact section
+      const contactEmailDisplay = document.getElementById('contact-email-display');
+      contactEmailDisplay.textContent = config.contact_email || defaultConfig.contact_email;
+
+      const contactSocialDisplay = document.getElementById('contact-social-display');
+      contactSocialDisplay.textContent = config.contact_social || defaultConfig.contact_social;
+
+      // Update all cards
+      const blogCards = document.querySelectorAll('.blog-card');
+      blogCards.forEach(card => {
+        card.style.backgroundColor = surfaceColor;
+        card.style.color = textColor;
+      });
+
+      // Update buttons
+      const buttons = document.querySelectorAll('button');
+      buttons.forEach(button => {
+        button.style.backgroundColor = primaryColor;
+        button.style.color = surfaceColor;
+      });
+
+      // Update tags
+      const tags = document.querySelectorAll('.tag');
+      tags.forEach(tag => {
+        if (!tag.classList.contains('bg-gradient-to-r')) {
+          tag.style.backgroundColor = primaryColor;
+          tag.style.color = surfaceColor;
+        }
+      });
+
+      // Update scroll to top button
+      const scrollToTop = document.getElementById('scroll-to-top');
+      scrollToTop.style.backgroundColor = primaryColor;
+      scrollToTop.style.color = surfaceColor;
+
+      // Update footer
+      const footer = document.getElementById('footer');
+      footer.style.backgroundColor = surfaceColor;
+      footer.style.color = textColor;
+
+      const footerText = document.getElementById('footer-text');
+      footerText.textContent = config.footer_text || defaultConfig.footer_text;
+      footerText.style.fontSize = `${baseSize * 0.875}px`;
+      footerText.style.color = secondaryColor;
+    }
+
+    function mapToCapabilities(config) {
+      return {
+        recolorables: [
+          {
+            get: () => config.background_color || defaultConfig.background_color,
+            set: (value) => {
+              config.background_color = value;
+              if (window.elementSdk) {
+                window.elementSdk.setConfig({ background_color: value });
+              }
+            }
+          },
+          {
+            get: () => config.surface_color || defaultConfig.surface_color,
+            set: (value) => {
+              config.surface_color = value;
+              if (window.elementSdk) {
+                window.elementSdk.setConfig({ surface_color: value });
+              }
+            }
+          },
+          {
+            get: () => config.text_color || defaultConfig.text_color,
+            set: (value) => {
+              config.text_color = value;
+              if (window.elementSdk) {
+                window.elementSdk.setConfig({ text_color: value });
+              }
+            }
+          },
+          {
+            get: () => config.primary_action_color || defaultConfig.primary_action_color,
+            set: (value) => {
+              config.primary_action_color = value;
+              if (window.elementSdk) {
+                window.elementSdk.setConfig({ primary_action_color: value });
+              }
+            }
+          },
+          {
+            get: () => config.secondary_action_color || defaultConfig.secondary_action_color,
+            set: (value) => {
+              config.secondary_action_color = value;
+              if (window.elementSdk) {
+                window.elementSdk.setConfig({ secondary_action_color: value });
+              }
+            }
+          }
+        ],
+        borderables: [],
+        fontEditable: {
+          get: () => config.font_family || defaultConfig.font_family,
+          set: (value) => {
+            config.font_family = value;
+            if (window.elementSdk) {
+              window.elementSdk.setConfig({ font_family: value });
+            }
+          }
+        },
+        fontSizeable: {
+          get: () => config.font_size || defaultConfig.font_size,
+          set: (value) => {
+            config.font_size = value;
+            if (window.elementSdk) {
+              window.elementSdk.setConfig({ font_size: value });
+            }
+          }
+        }
+      };
+    }
+
+    function mapToEditPanelValues(config) {
+      return new Map([
+        ["blog_title", config.blog_title || defaultConfig.blog_title],
+        ["blog_subtitle", config.blog_subtitle || defaultConfig.blog_subtitle],
+        ["nav_home", config.nav_home || defaultConfig.nav_home],
+        ["nav_about", config.nav_about || defaultConfig.nav_about],
+        ["nav_contact", config.nav_contact || defaultConfig.nav_contact],
+        ["about_title", config.about_title || defaultConfig.about_title],
+        ["about_text", config.about_text || defaultConfig.about_text],
+        ["contact_email", config.contact_email || defaultConfig.contact_email],
+        ["contact_social", config.contact_social || defaultConfig.contact_social],
+        ["footer_text", config.footer_text || defaultConfig.footer_text]
+      ]);
+    }
+
+    // Initialize everything
+    document.addEventListener('DOMContentLoaded', () => {
+      initMobileMenu();
+      initContactForm();
+      initAnimations();
+
+      // Scroll event listeners
+      window.addEventListener('scroll', () => {
+        updateReadingProgress();
+        updateScrollToTop();
+        updateNavbar();
+      });
+
+      // Scroll to top click handler
+      document.getElementById('scroll-to-top').addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      // Smooth scrolling for navigation links
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+          e.preventDefault();
+          const target = document.querySelector(this.getAttribute('href'));
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+      });
+    });
+
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange,
+        mapToCapabilities,
+        mapToEditPanelValues
+      });
+    }
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'99918822d1070730',t:'MTc2MjIzMjI1OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
